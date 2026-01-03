@@ -6,7 +6,7 @@ pydantic-settings==2.1.0
 python-multipart==0.0.6
 
 # ML/AI
-torch>=2.1.0
+torch==2.1.2
 transformers==4.35.0
 sentence-transformers==2.2.2
 coremltools==7.0
