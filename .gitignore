@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Data
+data/raw/*
+data/processed/*
+!data/**/.gitkeep
+
+# Models
+models/*.mlmodel
+models/*.pt
+models/*.onnx
+!models/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Database
+*.db
+*.sqlite
+
+# Secrets
+secrets.yaml
+kubeconfig.yaml
