@@ -3,121 +3,93 @@ import { useEffect, useState } from "react";
 const API = "https://ai-poweros.onrender.com";
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [pos, setPos] = useState({ x: 100, y: 100 });
+
   const [status, setStatus] = useState("checking...");
-  const [routine, setRoutine] = useState("loading");
+  const [routine, setRoutine] = useState(null);
   const [schedule, setSchedule] = useState(null);
   const [memory, setMemory] = useState(null);
-   const [metrics, setMetrics] = useState(null);
+  const [metrics, setMetrics] = useState(null);
 
   const [active, setActive] = useState("home");
 
-useEffect(() => {
-  const checkHealth = () => {
-    fetch(`${API}/health`)
-      .then(res => res.json())
-      .then(data => {
-        console.log("Health response:", data);
-        setStatus(data.status || "unknown");
+  /* ---------- HEALTH POLLING ---------- */
+  useEffect(() => {
+    const checkHealth = () => {
+      fetch(`${API}/health`)
+        .then(r => r.json())
+        .then(d => setStatus(d.status || "unknown"))
+        .catch(() => setStatus("offline"));
+    };
+
+    checkHealth();
+    const id = setInterval(checkHealth, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  /* ---------- ROUTINE (ONCE) ---------- */
+  useEffect(() => {
+    fetch(`${API}/api/v1/predict/routine`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user?.id || "guest",
+        context: {},
+        top_k: 5
       })
-      .catch(() => setStatus("offline"));
-  };
-
-  checkHealth();                 // run immediately
-  const id = setInterval(checkHealth, 5000); // refresh every 5s
-
-  return () => clearInterval(id);
-
-
-}, []);
-useEffect(() => {
-  fetch(`${API}/api/v1/predict/routine`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      user_id: "demo_user",
-      context: {},
-      top_k: 5
     })
-  })
-    .then(res => res.json())
-    .then(data => {
-      console.log("Routine Prediction:", data);
-      setRoutine(data);
+      .then(r => r.json())
+      .then(setRoutine)
+      .catch(() => setRoutine({ error: "failed" }));
+  }, [user]);
+
+  /* ---------- SCHEDULE ---------- */
+  useEffect(() => {
+    if (active !== "schedule") return;
+
+    fetch(`${API}/api/v1/advanced/schedule/intelligent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user?.id || "guest",
+        horizon: "day"
+      })
     })
-    .catch(err => {
-      console.error(err);
-      setRoutine("failed");
-    });
-}, []);
-useEffect(() => {
-  if (active !== "schedule") return;
+      .then(r => r.json())
+      .then(setSchedule)
+      .catch(() => setSchedule({ error: "failed" }));
+  }, [active, user]);
 
-  fetch(`${API}/api/v1/advanced/schedule/intelligent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      user_id: "demo_user",
-      horizon: "day"
+  /* ---------- MEMORY ---------- */
+  useEffect(() => {
+    if (active !== "memory") return;
+
+    fetch(`${API}/api/v1/advanced/habits/record`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user?.id || "guest",
+        action: "summary"
+      })
     })
-  })
-    .then(r => r.json())
-    .then(setSchedule)
-    .catch(() => setSchedule({ error: "failed" }));
-}, [active]);
-useEffect(() => {
-  if (active !== "memory") return;
+      .then(r => r.json())
+      .then(setMemory)
+      .catch(() => setMemory({ error: "failed" }));
+  }, [active, user]);
 
-  fetch(`${API}/api/v1/advanced/habits/record`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      user_id: "demo_user",
-      action: "summary"
-    })
-  })
-    .then(r => r.json())
-    .then(setMemory)
-    .catch(() => setMemory({ error: "failed" }));
-}, [active]);
-useEffect(() => {
-  if (active !== "logs") return;
+  /* ---------- METRICS ---------- */
+  useEffect(() => {
+    if (active !== "logs") return;
 
-  fetch(`${API}/health`)
-    .then(r => r.json())
-    .then(setMetrics)
-    .catch(() => setMetrics({ error: "failed" }));
-}, [active]);
-
-
-
-
-fetch(`${API}/api/v1/predict/routine`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    user_id: "demo_user",
-    context: {},
-    top_k: 5
-  })
-})
-  .then(res => res.json())
-  .then(data => {
-    console.log("Routine Prediction:", data);
-    setRoutine(data);
-  })
-  .catch(err => {
-    console.error("Routine error:", err);
-    setRoutine({ error: "Prediction failed" });
-  });
-
+    fetch(`${API}/health`)
+      .then(r => r.json())
+      .then(setMetrics)
+      .catch(() => setMetrics({ error: "failed" }));
+  }, [active]);
 
   return (
     <div className="os">
-      {/* Top Bar */}
       <div className="topbar">
         <div className="brand">🧠 AI-PowerOS</div>
         <div className="right">
@@ -126,78 +98,60 @@ fetch(`${API}/api/v1/predict/routine`, {
         </div>
       </div>
 
-      {/* Body */}
       <div className="body">
-        {/* Dock */}
         <div className="dock">
-          {[
-            ["home", "🏠"],
-            ["routine", "🔮"],
-            ["schedule", "🗓"],
-            ["memory", "🧠"],
-            ["logs", "📊"],
-            ["settings", "⚙️"],
-          ].map(([k, icon]) => (
-            <button
-              key={k}
-              className={active === k ? "dock-btn active" : "dock-btn"}
-              onClick={() => setActive(k)}
-            >
-              {icon}
+          {["home","routine","schedule","memory","logs","settings"].map((k,i)=>(
+            <button key={k} onClick={()=>setActive(k)}>
+              {["🏠","🔮","🗓","🧠","📊","⚙️"][i]}
             </button>
           ))}
         </div>
 
-        {/* Workspace */}
         <div className="workspace">
-          <div className="window">
+          <div
+            className="window"
+            style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
+            onMouseDown={(e)=>{
+              const sx=e.clientX-pos.x, sy=e.clientY-pos.y;
+              const move=(ev)=>setPos({x:ev.clientX-sx,y:ev.clientY-sy});
+              document.addEventListener("mousemove", move);
+              document.addEventListener("mouseup", ()=>document.removeEventListener("mousemove", move), {once:true});
+            }}
+          >
             <h2>{active.toUpperCase()}</h2>
+
+            {!user && (
+              <button onClick={() => setUser({ id: "demo_user", role: "admin" })}>
+                Login as Demo User
+              </button>
+            )}
 
             {active === "home" && (
               <>
                 <p><b>Backend</b></p>
                 <code>{API}</code>
-                <p style={{ marginTop: 12 }}>
-                  System Status: <b>{status}</b>
-                </p>
+                <pre>{routine ? JSON.stringify(routine,null,2) : "Loading routine..."}</pre>
               </>
             )}
 
-{active === "home" && (
-  <>
-    <p><b>Backend</b></p>
-    <code>{API}</code>
+            {active === "schedule" && <pre>{JSON.stringify(schedule,null,2)}</pre>}
+            {active === "memory" && <pre>{JSON.stringify(memory,null,2)}</pre>}
+            {active === "logs" && <pre>{JSON.stringify(metrics,null,2)}</pre>}
 
-    <p style={{ marginTop: 12 }}>
-      System Status: <b>{status}</b>
-    </p>
-
-    <p style={{ marginTop: 12 }}>
-      <b>Routine Prediction</b>
-    </p>
-
-    <pre style={{
-      background: "#020617",
-      border: "1px solid #0f172a",
-      padding: 12,
-      borderRadius: 8,
-      marginTop: 6,
-      fontSize: 12
-    }}>
-      {routine ? JSON.stringify(routine, null, 2) : "Loading..."}
-    </pre>
-  </>
-)}
-{active === "schedule" && (
-  <pre>{schedule ? JSON.stringify(schedule, null, 2) : "Loading schedule..."}</pre>
-)}
-            {active === "memory" && (
-              <pre>{memory ? JSON.stringify(memory, null, 2) : "Loading memory..."}</pre>
-            )}
-            {active === "logs" && (
-  <pre>{metrics ? JSON.stringify(metrics, null, 2) : "Loading metrics..."}</pre>
-)}
-
+            <button
+              onClick={()=>{
+                fetch(`${API}/api/v1/agents/run`,{
+                  method:"POST",
+                  headers:{ "Content-Type":"application/json" },
+                  body:JSON.stringify({
+                    agent:"routine_optimizer",
+                    user_id:user?.id || "guest"
+                  })
+                })
+              }}
+            >
+              ▶ Run AI Agent
+            </button>
           </div>
         </div>
       </div>
