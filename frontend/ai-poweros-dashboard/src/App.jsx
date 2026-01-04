@@ -4,30 +4,48 @@ const API = "https://ai-poweros.onrender.com";
 
 export default function App() {
   const [status, setStatus] = useState("checking...");
-  const [activeApp, setActiveApp] = useState("home");
+  const [routine, setRoutine] = useState(null);
 
-  useEffect(() => {
+  const [active, setActive] = useState("home");
+
+useEffect(() => {
+  const checkHealth = () => {
     fetch(`${API}/health`)
-      .then(r => r.json())
-      .then(d => setStatus(d.status || "unknown"))
+      .then(res => res.json())
+      .then(data => {
+        console.log("Health response:", data);
+        setStatus(data.status || "unknown");
+      })
       .catch(() => setStatus("offline"));
-  }, []);
+  };
+
+  checkHealth();                 // run immediately
+  const id = setInterval(checkHealth, 5000); // refresh every 5s
+
+  return () => clearInterval(id);
+  fetch(`${API}/api/v1/predict/routine`)
+  .then(r => r.json())
+  .then(d => setRoutine(d))
+  .catch(() => setRoutine({ error: "failed" }));
+
+}, []);
+
 
   return (
-    <div style={styles.os}>
+    <div className="os">
       {/* Top Bar */}
-      <div style={styles.topbar}>
-        <div>🧠 AI-PowerOS</div>
-        <div style={styles.topRight}>
-          <span>Status: <b>{status}</b></span>
-          <span>{new Date().toLocaleTimeString()}</span>
+      <div className="topbar">
+        <div className="brand">🧠 AI-PowerOS</div>
+        <div className="right">
+          <span className={`status ${status}`}>● {status}</span>
+          <span className="time">{new Date().toLocaleTimeString()}</span>
         </div>
       </div>
 
       {/* Body */}
-      <div style={styles.body}>
+      <div className="body">
         {/* Dock */}
-        <div style={styles.dock}>
+        <div className="dock">
           {[
             ["home", "🏠"],
             ["routine", "🔮"],
@@ -35,14 +53,11 @@ export default function App() {
             ["memory", "🧠"],
             ["logs", "📊"],
             ["settings", "⚙️"],
-          ].map(([key, icon]) => (
+          ].map(([k, icon]) => (
             <button
-              key={key}
-              onClick={() => setActiveApp(key)}
-              style={{
-                ...styles.dockBtn,
-                background: activeApp === key ? "#0ea5e9" : "transparent",
-              }}
+              key={k}
+              className={active === k ? "dock-btn active" : "dock-btn"}
+              onClick={() => setActive(k)}
             >
               {icon}
             </button>
@@ -50,115 +65,48 @@ export default function App() {
         </div>
 
         {/* Workspace */}
-        <div style={styles.workspace}>
-          {activeApp === "home" && (
-            <Panel title="System Overview">
-              <p>Backend: {API}</p>
-              <p>Health: {status}</p>
-              <p>Version: 1.0.0</p>
-            </Panel>
-          )}
+        <div className="workspace">
+          <div className="window">
+            <h2>{active.toUpperCase()}</h2>
 
-          {activeApp === "routine" && (
-            <Panel title="Routine Predictor">
-              <p>Endpoint:</p>
-              <code>/api/v1/predict/routine</code>
-            </Panel>
-          )}
+            {active === "home" && (
+              <>
+                <p><b>Backend</b></p>
+                <code>{API}</code>
+                <p style={{ marginTop: 12 }}>
+                  System Status: <b>{status}</b>
+                </p>
+              </>
+            )}
 
-          {activeApp === "schedule" && (
-            <Panel title="Intelligent Scheduler">
-              <p>Endpoint:</p>
-              <code>/api/v1/advanced/schedule/intelligent</code>
-            </Panel>
-          )}
+{active === "home" && (
+  <>
+    <p><b>Backend</b></p>
+    <code>{API}</code>
 
-          {activeApp === "memory" && (
-            <Panel title="Memory Graph">
-              <p>Graph + Vector DB status</p>
-            </Panel>
-          )}
+    <p style={{ marginTop: 12 }}>
+      System Status: <b>{status}</b>
+    </p>
 
-          {activeApp === "logs" && (
-            <Panel title="System Logs">
-              <p>Live logs coming soon…</p>
-            </Panel>
-          )}
+    <p style={{ marginTop: 12 }}>
+      <b>Routine Prediction</b>
+    </p>
 
-          {activeApp === "settings" && (
-            <Panel title="Settings">
-              <p>Environment: Production</p>
-            </Panel>
-          )}
+    <pre style={{
+      background: "#020617",
+      border: "1px solid #0f172a",
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 6,
+      fontSize: 12
+    }}>
+      {routine ? JSON.stringify(routine, null, 2) : "Loading..."}
+    </pre>
+  </>
+)}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-function Panel({ title, children }) {
-  return (
-    <div style={styles.panel}>
-      <h2>{title}</h2>
-      <div>{children}</div>
-    </div>
-  );
-}
-
-const styles = {
-  os: {
-    background: "#020617",
-    color: "white",
-    minHeight: "100vh",
-    fontFamily: "system-ui",
-  },
-  topbar: {
-    height: 48,
-    background: "#020617",
-    borderBottom: "1px solid #0f172a",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 16px",
-  },
-  topRight: {
-    display: "flex",
-    gap: 16,
-    opacity: 0.9,
-  },
-  body: {
-    display: "flex",
-    height: "calc(100vh - 48px)",
-  },
-  dock: {
-    width: 64,
-    background: "#020617",
-    borderRight: "1px solid #0f172a",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    paddingTop: 12,
-    gap: 10,
-  },
-  dockBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    border: "none",
-    color: "white",
-    fontSize: 20,
-    cursor: "pointer",
-  },
-  workspace: {
-    flex: 1,
-    padding: 24,
-    overflow: "auto",
-  },
-  panel: {
-    background: "#020617",
-    border: "1px solid #0f172a",
-    borderRadius: 14,
-    padding: 24,
-    maxWidth: 900,
-  },
-};

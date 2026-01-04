@@ -1,0 +1,117 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  background: #020617;
+  font-family: system-ui, sans-serif;
+}
+
+.os {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #e5e7eb;
+}
+
+/* Top bar */
+.topbar {
+  height: 48px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #0f172a;
+}
+
+.brand {
+  font-weight: 700;
+}
+
+.right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.status.healthy { color: #22c55e; }
+.status.offline { color: #ef4444; }
+.status.unknown { color: #eab308; }
+
+/* Body */
+.body {
+  flex: 1;
+  display: flex;
+}
+
+/* Dock */
+.dock {
+  width: 64px;
+  border-right: 1px solid #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+  gap: 10px;
+}
+
+.dock-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.dock-btn.active {
+  background: #0ea5e9;
+}
+
+/* Workspace */
+.workspace {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+}
+
+.window {
+  flex: 1;
+  border: 1px solid #0f172a;
+  border-radius: 14px;
+  padding: 18px;
+  background: #020617;
+}
+
+code {
+  display: inline-block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #0f172a;
+}
+/* Smooth UI */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Glass top bar */
+.topbar {
+  backdrop-filter: blur(8px);
+  background: rgba(2, 6, 23, 0.7);
+}
+
+/* Dock hover */
+.dock-btn:hover {
+  background: rgba(14, 165, 233, 0.3);
+}
+
+/* Window shadow */
+.window {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
