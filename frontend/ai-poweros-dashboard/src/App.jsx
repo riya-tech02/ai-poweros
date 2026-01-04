@@ -4,7 +4,10 @@ const API = "https://ai-poweros.onrender.com";
 
 export default function App() {
   const [status, setStatus] = useState("checking...");
-  const [routine, setRoutine] = useState(null);
+  const [routine, setRoutine] = useState("loading");
+  const [schedule, setSchedule] = useState(null);
+  const [memory, setMemory] = useState(null);
+   const [metrics, setMetrics] = useState(null);
 
   const [active, setActive] = useState("home");
 
@@ -23,12 +26,93 @@ useEffect(() => {
   const id = setInterval(checkHealth, 5000); // refresh every 5s
 
   return () => clearInterval(id);
-  fetch(`${API}/api/v1/predict/routine`)
-  .then(r => r.json())
-  .then(d => setRoutine(d))
-  .catch(() => setRoutine({ error: "failed" }));
+
 
 }, []);
+useEffect(() => {
+  fetch(`${API}/api/v1/predict/routine`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_id: "demo_user",
+      context: {},
+      top_k: 5
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      console.log("Routine Prediction:", data);
+      setRoutine(data);
+    })
+    .catch(err => {
+      console.error(err);
+      setRoutine("failed");
+    });
+}, []);
+useEffect(() => {
+  if (active !== "schedule") return;
+
+  fetch(`${API}/api/v1/advanced/schedule/intelligent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: "demo_user",
+      horizon: "day"
+    })
+  })
+    .then(r => r.json())
+    .then(setSchedule)
+    .catch(() => setSchedule({ error: "failed" }));
+}, [active]);
+useEffect(() => {
+  if (active !== "memory") return;
+
+  fetch(`${API}/api/v1/advanced/habits/record`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: "demo_user",
+      action: "summary"
+    })
+  })
+    .then(r => r.json())
+    .then(setMemory)
+    .catch(() => setMemory({ error: "failed" }));
+}, [active]);
+useEffect(() => {
+  if (active !== "logs") return;
+
+  fetch(`${API}/health`)
+    .then(r => r.json())
+    .then(setMetrics)
+    .catch(() => setMetrics({ error: "failed" }));
+}, [active]);
+
+
+
+
+fetch(`${API}/api/v1/predict/routine`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    user_id: "demo_user",
+    context: {},
+    top_k: 5
+  })
+})
+  .then(res => res.json())
+  .then(data => {
+    console.log("Routine Prediction:", data);
+    setRoutine(data);
+  })
+  .catch(err => {
+    console.error("Routine error:", err);
+    setRoutine({ error: "Prediction failed" });
+  });
 
 
   return (
@@ -104,6 +188,16 @@ useEffect(() => {
     </pre>
   </>
 )}
+{active === "schedule" && (
+  <pre>{schedule ? JSON.stringify(schedule, null, 2) : "Loading schedule..."}</pre>
+)}
+            {active === "memory" && (
+              <pre>{memory ? JSON.stringify(memory, null, 2) : "Loading memory..."}</pre>
+            )}
+            {active === "logs" && (
+  <pre>{metrics ? JSON.stringify(metrics, null, 2) : "Loading metrics..."}</pre>
+)}
+
           </div>
         </div>
       </div>
