@@ -77,3 +77,47 @@ async def root():
             "habits": "/api/v1/advanced/habits/record",
         },
     }
+from fastapi.responses import HTMLResponse
+
+@app.get("/", response_class=HTMLResponse)
+def desktop():
+    return """
+    <html>
+      <head>
+        <title>AI-PowerOS Desktop</title>
+        <style>
+          body {
+            background: #0f172a;
+            color: white;
+            font-family: system-ui;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          .card {
+            background: #020617;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,255,255,0.2);
+            text-align: center;
+          }
+          a {
+            color: cyan;
+            text-decoration: none;
+            display: block;
+            margin-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>🧠 AI-PowerOS</h1>
+          <p>System Status: Online</p>
+          <a href="/docs">API Control Panel</a>
+          <a href="/dashboard">Dashboard (coming soon)</a>
+        </div>
+      </body>
+    </html>
+    """
+
