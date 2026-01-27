@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
 
-const API_URL = import.meta.env.PROD 
-  ? 'https://ai-poweros.onrender.com' 
-  : '';
+// Backend API URL - use environment variable or default
+const API_URL = import.meta.env.VITE_API_URL || 'https://ai-poweros.onrender.com';
 
 function App() {
   const [activeWindow, setActiveWindow] = useState('dashboard');
@@ -27,6 +26,7 @@ function App() {
       setSystemStatus(data);
     } catch (error) {
       console.error('Health check failed:', error);
+      setSystemStatus({ status: 'offline' });
     }
   };
 
@@ -38,22 +38,23 @@ function App() {
         context: { time_of_day: 'afternoon' },
         top_k: 3
       });
-      alert(`Prediction Success!\nLatency: ${data.latency_ms}ms\nTop: ${data.predictions[0].activity} (${(data.predictions[0].confidence * 100).toFixed(1)}%)`);
+      alert(`✅ Prediction Success!\n\nLatency: ${data.latency_ms}ms\nBackend: ${data.backend}\n\nTop Prediction:\n${data.predictions[0].activity} - ${(data.predictions[0].confidence * 100).toFixed(1)}%`);
     } catch (error) {
-      alert('Error: ' + error.message);
+      alert('❌ Error: ' + error.message);
     }
   };
 
   const sendMessage = async () => {
     if (!chatInput.trim()) return;
     
-    setChatMessages([...chatMessages, { role: 'user', content: chatInput }]);
+    const newMessages = [...chatMessages, { role: 'user', content: chatInput }];
+    setChatMessages(newMessages);
     setChatInput('');
     
     setTimeout(() => {
-      setChatMessages(prev => [...prev, { 
+      setChatMessages([...newMessages, { 
         role: 'ai', 
-        content: 'I can help you with predictions, scheduling, and habit tracking. Try the Dashboard for a quick test!' 
+        content: 'I can help you with predictions, task scheduling, and habit tracking. Try the Dashboard to test the AI prediction system!' 
       }]);
     }, 1000);
   };
@@ -75,6 +76,9 @@ function App() {
         </div>
         <div className="menu-right">
           <div className="system-icons">
+            <div className="system-icon" title={`Status: ${systemStatus?.status || 'checking...'}`}>
+              <i className={`fas fa-circle ${systemStatus?.status === 'healthy' ? 'status-healthy' : 'status-offline'}`}></i>
+            </div>
             <i className="fas fa-wifi"></i>
             <i className="fas fa-battery-full"></i>
           </div>
@@ -95,6 +99,8 @@ function App() {
               </div>
               <div className="window-controls">
                 <div className="window-btn close" onClick={() => setActiveWindow(null)}></div>
+                <div className="window-btn minimize"></div>
+                <div className="window-btn maximize"></div>
               </div>
             </div>
             <div className="window-content">
@@ -115,22 +121,27 @@ function App() {
                   </div>
                   <div className="stat-card">
                     <div className="stat-label">System Status</div>
-                    <div className="stat-value" style={{fontSize: '1.5em'}}>
-                      {systemStatus?.status || 'Loading...'}
+                    <div className="stat-value" style={{fontSize: '1.5em', color: systemStatus?.status === 'healthy' ? '#10b981' : '#ef4444'}}>
+                      {systemStatus?.status || 'checking...'}
                     </div>
                   </div>
                 </div>
                 <h3>Quick Actions</h3>
                 <div className="actions">
                   <button className="btn" onClick={testPrediction}>
-                    <i className="fas fa-magic"></i> Test Prediction
+                    <i className="fas fa-magic"></i> Test AI Prediction
                   </button>
-                  <button className="btn" onClick={() => window.open('https://ai-poweros.onrender.com/docs')}>
-                    <i className="fas fa-book"></i> API Docs
+                  <button className="btn" onClick={() => window.open(`${API_URL}/docs`, '_blank')}>
+                    <i className="fas fa-book"></i> API Documentation
                   </button>
                   <button className="btn" onClick={checkHealth}>
-                    <i className="fas fa-heartbeat"></i> System Health
+                    <i className="fas fa-heartbeat"></i> Check Health
                   </button>
+                </div>
+                <div style={{marginTop: '20px', padding: '15px', background: '#f0f0f0', borderRadius: '10px'}}>
+                  <strong>Backend:</strong> {API_URL}<br/>
+                  <strong>Version:</strong> {systemStatus?.version || 'N/A'}<br/>
+                  <strong>Features:</strong> {systemStatus?.features?.length || 0} active
                 </div>
               </div>
             </div>
@@ -146,6 +157,8 @@ function App() {
               </div>
               <div className="window-controls">
                 <div className="window-btn close" onClick={() => setActiveWindow(null)}></div>
+                <div className="window-btn minimize"></div>
+                <div className="window-btn maximize"></div>
               </div>
             </div>
             <div className="window-content">
@@ -182,22 +195,40 @@ function App() {
               </div>
               <div className="window-controls">
                 <div className="window-btn close" onClick={() => setActiveWindow(null)}></div>
+                <div className="window-btn minimize"></div>
+                <div className="window-btn maximize"></div>
               </div>
             </div>
             <div className="window-content">
               <div className="settings">
                 <h3>AI Features</h3>
                 <div className="setting-item">
-                  <span>Automatic Predictions</span>
+                  <div>
+                    <div style={{fontWeight: 600}}>Automatic Predictions</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>Enable real-time activity predictions</div>
+                  </div>
                   <div className="toggle active"></div>
                 </div>
                 <div className="setting-item">
-                  <span>Smart Scheduling</span>
+                  <div>
+                    <div style={{fontWeight: 600}}>Smart Scheduling</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>AI-powered task optimization</div>
+                  </div>
                   <div className="toggle active"></div>
                 </div>
-                <h3>Privacy</h3>
+                <h3>Privacy & Security</h3>
                 <div className="setting-item">
-                  <span>On-Device Processing</span>
+                  <div>
+                    <div style={{fontWeight: 600}}>On-Device Processing</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>Process sensitive data locally (87%)</div>
+                  </div>
+                  <div className="toggle active"></div>
+                </div>
+                <div className="setting-item">
+                  <div>
+                    <div style={{fontWeight: 600}}>Differential Privacy</div>
+                    <div style={{fontSize: '13px', color: '#666'}}>ε=1.0 privacy guarantee</div>
+                  </div>
                   <div className="toggle active"></div>
                 </div>
               </div>
@@ -216,7 +247,7 @@ function App() {
           <div className="dock-item" onClick={() => setActiveWindow('settings')} title="Settings">
             <i className="fas fa-cog"></i>
           </div>
-          <div className="dock-item" onClick={() => window.open('https://ai-poweros.onrender.com/docs')} title="API Docs">
+          <div className="dock-item" onClick={() => window.open(`${API_URL}/docs`, '_blank')} title="API Documentation">
             <i className="fas fa-book"></i>
           </div>
         </div>
