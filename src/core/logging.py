@@ -19,3 +19,4 @@ def setup_logging():
 
 
 logger = structlog.get_logger()
+
